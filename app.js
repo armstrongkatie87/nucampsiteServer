@@ -3,18 +3,17 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
+const session = require('express-session');//imported express session module
+const FileStore = require('session-file-store')(session);//imported file store w/ 2nd param session
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 const campsiteRouter = require('./routes/campsiteRouter');
 const promotionRouter = require('./routes/promotionRouter');
 const partnerRouter = require('./routes/partnerRouter');
 
-//add require mongoose module
 const mongoose = require('mongoose');
-//need url for mongodb server
+
 const url = 'mongodb://localhost:27017/nucampsite';
-//set up connection to mongodb server
 const connect = mongoose.connect(url, {
   useCreateIndex: true,
   useFindAndModify: false,
@@ -26,7 +25,6 @@ connect.then(() => console.log('Connected correctly to server'),
   err => console.log(err)
 );
 
-
 var app = express();
 
 app.set('views', path.join(__dirname, 'views'));
@@ -35,41 +33,51 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-//to use signed cookies need to provide the cookie parser w/a secret key as arg, can be any string; 
-app.use(cookieParser('12345-67890-09876-54321'));
+// app.use(cookieParser('12345-67890-09876-54321'));
 
-//deleted req.headers then set up to use signed cookies for authentication
+//set up session middleware
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false,//won't save an empty session an no cookie sent
+  resave: false,//once session created, updated & saved will cont resave when req for session
+  store: new FileStore()//creates new FileStore as obj used to save session info to hard disk
+}));
+
+//Update Authentication to Use Sessions
 function auth(req, res, next) {
-  if (!req.signedCookies.user) {//signedCookies f/cookie parser will auto parse cookie f/signed req
-    const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            const err = new Error('You are not authenticated!');
-            res.setHeader('WWW-Authenticate', 'Basic');
-            err.status = 401;
-            return next(err);
-        }
-  
-        const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-        const user = auth[0];
-        const pass = auth[1];
-        if (user === 'admin' && pass === 'password') {
-            res.cookie('user', 'admin', {signed: true});//creates & sets up cookie
-            return next(); // authorized
-        } else {
-            const err = new Error('You are not authenticated!');
-            res.setHeader('WWW-Authenticate', 'Basic');
-            err.status = 401;
-            return next(err);
-        }
-    } else {
-        if (req.signedCookies.user === 'admin') {//if signed cookie admin grant acccess
-            return next();
-        } else {
-            const err = new Error('You are not authenticated!');
-            err.status = 401;
-            return next(err);
-        }
-    }
+  console.log(req.session);
+
+  if (!req.session.user) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+          const err = new Error('You are not authenticated!');
+          res.setHeader('WWW-Authenticate', 'Basic');
+          err.status = 401;
+          return next(err);
+      }
+
+      const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+      const user = auth[0];
+      const pass = auth[1];
+      if (user === 'admin' && pass === 'password') {
+          req.session.user = 'admin';
+          return next(); // authorized
+      } else {
+          const err = new Error('You are not authenticated!');
+          res.setHeader('WWW-Authenticate', 'Basic');
+          err.status = 401;
+          return next(err);
+      }
+  } else {
+      if (req.session.user === 'admin') {
+          return next();
+      } else {
+          const err = new Error('You are not authenticated!');
+          err.status = 401;
+          return next(err);
+      }
+  }
 }
 
 app.use(auth);
