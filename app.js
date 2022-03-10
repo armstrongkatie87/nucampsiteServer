@@ -3,8 +3,12 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-const session = require('express-session');//imported express session module
-const FileStore = require('session-file-store')(session);//imported file store w/ 2nd param session
+const session = require('express-session');
+const FileStore = require('session-file-store')(session);
+const passport = require('passport');//imported passport
+const authenticate = require('./authenticate');//imported auth module we implemented
+
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 const campsiteRouter = require('./routes/campsiteRouter');
@@ -35,35 +39,31 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 // app.use(cookieParser('12345-67890-09876-54321'));
 
-//set up session middleware
 app.use(session({
   name: 'session-id',
   secret: '12345-67890-09876-54321',
-  saveUninitialized: false,//won't save an empty session an no cookie sent
-  resave: false,//once session created, updated & saved will cont resave when req for session
-  store: new FileStore()//creates new FileStore as obj used to save session info to hard disk
+  saveUninitialized: false,
+  resave: false,
+  store: new FileStore()
 }));
 
-//moved index and users routers to before the authentication
+//set up passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-//Update Authentication to use User Authentication Support
+//Update Authentication to use passport 
 function auth(req, res, next) {
-  console.log(req.session);
+  console.log(req.user);
 
-  if (!req.session.user) {
-      const err = new Error('You are not authenticated!');
+  if (!req.user) {
+      const err = new Error('You are not authenticated!');                    
       err.status = 401;
       return next(err);
   } else {
-      if (req.session.user === 'authenticated') {
-          return next();
-      } else {
-          const err = new Error('You are not authenticated!');
-          err.status = 401;
-          return next(err);
-      }
+      return next();
   }
 }
 

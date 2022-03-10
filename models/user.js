@@ -1,21 +1,16 @@
-//create mongoose user schema and model
 const mongoose = require('mongoose');
+const passportLocalMongoose = require('passport-local-mongoose');//req passport-local-mongoose
 const Schema = mongoose.Schema;
 
-const userSchema = new Schema({//holds structure of user doc w/in obj props
-    username: {//1st field
-        type: String,
-        required: true,
-        unique: true
-    },
-    password: {//2nd field
-        type: String,
-        required: true
-    },
-    admin: {//3rd field
+//removed username and password from the schema
+const userSchema = new Schema({
+    admin: {
         type: Boolean,
         default: false
     }
 });
+
+//added passport-local-mongoose plugin to user schema
+userSchema.plugin(passportLocalMongoose);
 
 module.exports = mongoose.model('User', userSchema);
