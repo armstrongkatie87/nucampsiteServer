@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/user');
-const passport = require('passport');//imported passport
+const passport = require('passport');
+const authenticate = require('../authenticate');//imported authenticate module
 
 const router = express.Router();
 
@@ -9,17 +10,16 @@ router.get('/', function(req, res, next) {
   res.send('respond with a resource');
 });
 
-//signup handling rewritten to use passport local mongoose plugins register()
 router.post('/signup', (req, res) => {
     User.register(
-        new User({username: req.body.username}),//1st arg-new user created w/req name
-        req.body.password,//2nd arg-password f/req
-        err => {//3rd arg- callback() rec an err
-            if (err) {//if err, then internal server err
+        new User({username: req.body.username}),
+        req.body.password,
+        err => {
+            if (err) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
                 res.json({err: err});
-            } else {//if no err then authenticate() 
+            } else {
                 passport.authenticate('local')(req, res, () => {
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
@@ -30,11 +30,11 @@ router.post('/signup', (req, res) => {
     );
 });
 
-//inserted middlewear into post router and pass arg of local-enables passport auth on route, handles login, challenge for creds, parsing creds, so just need set up res for successful login
 router.post('/login', passport.authenticate('local'), (req, res) => {
+    const token = authenticate.getToken({_id: req.user._id});//issues token to auth user
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.json({success: true, status: 'You are successfully logged in!'});
+    res.json({success: true, token: token, status: 'You are successfully logged in!'});//added token prop to res obj
 });
 
 router.get('/logout', (req, res, next) => {
