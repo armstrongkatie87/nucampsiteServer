@@ -1,16 +1,30 @@
 const mongoose = require('mongoose');
-const passportLocalMongoose = require('passport-local-mongoose');//req passport-local-mongoose
+const passportLocalMongoose = require('passport-local-mongoose');
 const Schema = mongoose.Schema;
 
-//removed username and password from the schema
+//1: Modify the userSchema to incl 1st & last name
 const userSchema = new Schema({
+    firstname: {
+        type: String,
+        default: ''
+    },
+    lastname: {
+        type: String,
+        default: ''
+    },
     admin: {
         type: Boolean,
         default: false
     }
 });
 
-//added passport-local-mongoose plugin to user schema
 userSchema.plugin(passportLocalMongoose);
 
 module.exports = mongoose.model('User', userSchema);
+
+
+
+
+
+
+

@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-//reguire mongoose currency
 require('mongoose-currency').loadType(mongoose);
-//set up shorthand currency
+
 const Currency = mongoose.Types.Currency;
 
+//2: Modify commentSchema's author field for type of ObjectId and ref of User
 const commentSchema = new Schema({
     rating: {
         type: Number,
@@ -17,9 +17,9 @@ const commentSchema = new Schema({
         type: String,
         required: true
     },
-    author: {
-        type: String,
-        required: true
+    author: {//updated here
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }
 }, {
     timestamps: true

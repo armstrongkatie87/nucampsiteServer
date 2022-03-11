@@ -1,14 +1,14 @@
-//controll routes w/authentication- adding the authenticate.verifyUser middleware function to all endpoints except the GET endpoints: 
-
 const express = require('express');
 const Campsite = require('../models/campsite');
-const authenticate = require('../authenticate');//import authenticate module
+const authenticate = require('../authenticate');
 
 const campsiteRouter = express.Router();
 
+//3: Modify campsiteRouter to use .populate() method on campsite docs retrieved for all get req's
 campsiteRouter.route('/')
 .get((req, res, next) => {
     Campsite.find()
+    .populate('comments.author')//inserted .populate() method- to pop author field of comment
     .then(campsites => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -43,6 +43,7 @@ campsiteRouter.route('/')
 campsiteRouter.route('/:campsiteId')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
+    .populate('comments.author')//added populate()
     .then(campsite => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -78,6 +79,7 @@ campsiteRouter.route('/:campsiteId')
 campsiteRouter.route('/:campsiteId/comments')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
+    .populate('comments.author')//populate ()
     .then(campsite => {
         if (campsite) {
             res.statusCode = 200;
@@ -90,11 +92,12 @@ campsiteRouter.route('/:campsiteId/comments')
         }
     })
     .catch(err => next(err));
-})
+})//4: Modify post req for adding a new coment to save current user's _id to author field
 .post(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
         if (campsite) {
+            req.body.author = req.user._id;//add id of current user to req body as the author
             campsite.comments.push(req.body);
             campsite.save()
             .then(campsite => {
@@ -141,6 +144,7 @@ campsiteRouter.route('/:campsiteId/comments')
 campsiteRouter.route('/:campsiteId/comments/:commentId')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
+    .populate('comments.author')//add pop
     .then(campsite => {
         if (campsite && campsite.comments.id(req.params.commentId)) {
             res.statusCode = 200;
