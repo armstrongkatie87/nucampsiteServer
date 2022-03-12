@@ -1,11 +1,12 @@
-//controll routes w/authentication- adding the authenticate.verifyUser middleware function to all endpoints except the GET endpoints:
+//Task 2: Set up admin-only access points
 
 const express = require('express');
 const Promotion = require('../models/promotion');
-const authenticate = require('../authenticate');//import authenticate module
+const authenticate = require('../authenticate');
 
 const promotionRouter = express.Router();
 
+//authorize only admin accounts to access the following endpoints: POST and DELETE operations on  /promotions
 promotionRouter.route('/')
 .get((req, res, next) => {
     Promotion.find()
@@ -15,8 +16,8 @@ promotionRouter.route('/')
         res.json(promotions);
     })
     .catch(err => next(err));
-})
-.post(authenticate.verifyUser, (req, res, next) => {
+})//updated post to verify admin
+.post(aauthenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.create(req.body)
     .then(promotion => {
         console.log('Promotion Created ', promotion);
@@ -29,8 +30,8 @@ promotionRouter.route('/')
 .put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /promotions');
-})
-.delete(authenticate.verifyUser, (req, res, next) => {
+})//updated delete to verifyAdmin
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.deleteMany()
     .then(response => {
         res.statusCode = 200;
@@ -39,6 +40,8 @@ promotionRouter.route('/')
     })
     .catch(err => next(err));
 });
+
+//authorize only admin accounts to access the following endpoints: PUT and DELETE operations on /promotions/:promotionsId
 promotionRouter.route('/:promotionId')
 .get((req, res, next) => {
     Promotion.findById(req.params.promotionId)
@@ -52,8 +55,8 @@ promotionRouter.route('/:promotionId')
 .post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /promotions/${req.params.promotionId}`);
-})
-.put(authenticate.verifyUser, (req, res, next) => {
+})//updated put to verifyAdmin
+.put(aauthenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.findByIdAndUpdate(req.params.promotionId, {
         $set: req.body
     }, { new: true })
@@ -63,8 +66,8 @@ promotionRouter.route('/:promotionId')
         res.json(promotion);
     })
     .catch(err => next(err));
-})
-.delete(authenticate.verifyUser, (req, res, next) => {
+})//updated delete to verifyAdmin
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.findByIdAndDelete(req.params.promotionId)
     .then(response => {
         res.statusCode = 200;

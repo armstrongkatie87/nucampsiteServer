@@ -1,3 +1,5 @@
+//Task 3: Complete the GET /users endpoint
+
 const express = require('express');
 const User = require('../models/user');
 const passport = require('passport');
@@ -5,29 +7,34 @@ const authenticate = require('../authenticate');
 
 const router = express.Router();
 
-/* GET users listing. */
+//Allow admins to access users documents: Activate the /users path for GET requests in the usersRouter (/routes/users.js). When a GET request is sent to the /users path, respond by checking if the request is from an admin user. If so, then return the details of all existing user documents. Ordinary users should be unable to reach the GET /users endpoint.
 router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+  if (req.user.admin){
+    return User.find();
+  } else {
+    const err = new Error('You are NOT an admin!');
+    err.status = 403;
+    return next(err);
+  }
 });
 
-//5: Modify usersRouter to add 1st name & last name to user doc upon registration
 router.post('/signup', (req, res) => {
     User.register(
         new User({username: req.body.username}),
         req.body.password,
-        (err, user) => {//added user arg
+        (err, user) => {
             if (err) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
                 res.json({err: err});
             } else {
-                if (req.body.firstname) {//ck if 1st name sent in req body
-                    user.firstname = req.body.firstname;//if so sets to user.firstname field
+                if (req.body.firstname) {
+                    user.firstname = req.body.firstname;
                 }
-                if (req.body.lastname) {//ck if last name sent in req body
-                    user.lastname = req.body.lastname;//if so sets to user.lastname field
+                if (req.body.lastname) {
+                    user.lastname = req.body.lastname;
                 }
-                user.save(err => {//saved to db then handled potential errs
+                user.save(err => {
                     if (err) {
                         res.statusCode = 500;
                         res.setHeader('Content-Type', 'application/json');

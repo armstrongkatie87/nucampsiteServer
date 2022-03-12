@@ -1,11 +1,12 @@
-//controll routes w/authentication- adding the authenticate.verifyUser middleware function to all endpoints except the GET endpoints:
+//Task 2: Set up admin-only access points...hint:(first authenticate.verifyUser, authenticate.verifyAdmin)
 
 const express = require('express');
 const Partner = require('../models/partner');
-const authenticate = require('../authenticate');//import authenticate module
+const authenticate = require('../authenticate');
 
 const partnerRouter = express.Router();
 
+//authorize only admin accounts to access the following endpoints: POST and DELETE operations on /partners
 partnerRouter.route('/')
 .get((req, res, next) => {
     Partner.find()
@@ -15,8 +16,8 @@ partnerRouter.route('/')
         res.json(partners);
     })
     .catch(err => next(err));
-})
-.post(authenticate.verifyUser,(req, res, next) => {
+})//updated post to verify admin
+.post(authenticate.verifyUser, authenticate.verifyAdmin,(req, res, next) => {
     Partner.create(req.body)
     .then(partner => {
         console.log('Partner Created ', partner);
@@ -29,8 +30,8 @@ partnerRouter.route('/')
 .put(authenticate.verifyUser,(req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /partners');
-})
-.delete(authenticate.verifyUser,(req, res, next) => {
+})//updated delete to verifyAdmin
+.delete(authenticate.verifyUser, authenticate.verifyAdmin,(req, res, next) => {
     Partner.deleteMany()
     .then(response => {
         res.statusCode = 200;
@@ -40,6 +41,7 @@ partnerRouter.route('/')
     .catch(err => next(err));
 });
 
+//authorize only admin accounts to access the following endpoints: PUT and DELETE operations on /partners/:partnerId
 partnerRouter.route('/:partnerId')
 .get((req, res, next) => {
     Partner.findById(req.params.partnerId)
@@ -53,8 +55,8 @@ partnerRouter.route('/:partnerId')
 .post(authenticate.verifyUser,(req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /partners/${req.params.partnerId}`);
-})
-.put(authenticate.verifyUser,(req, res, next) => {
+})//updated put to verify admin
+.put(authenticate.verifyUser, authenticate.verifyAdmin,(req, res, next) => {
     Partner.findByIdAndUpdate(req.params.partnerId, {
         $set: req.body
     }, { new: true })
@@ -64,8 +66,8 @@ partnerRouter.route('/:partnerId')
         res.json(partner);
     })
     .catch(err => next(err));
-})
-.delete(authenticate.verifyUser,(req, res, next) => {
+})//updated delete to verify admin
+.delete(authenticate.verifyUser, authenticate.verifyAdmin,(req, res, next) => {
     Partner.findByIdAndDelete(req.params.partnerId)
     .then(response => {
         res.statusCode = 200;
