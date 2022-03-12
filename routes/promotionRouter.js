@@ -17,7 +17,7 @@ promotionRouter.route('/')
     })
     .catch(err => next(err));
 })//updated post to verify admin
-.post(aauthenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.create(req.body)
     .then(promotion => {
         console.log('Promotion Created ', promotion);
@@ -56,7 +56,7 @@ promotionRouter.route('/:promotionId')
     res.statusCode = 403;
     res.end(`POST operation not supported on /promotions/${req.params.promotionId}`);
 })//updated put to verifyAdmin
-.put(aauthenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.findByIdAndUpdate(req.params.promotionId, {
         $set: req.body
     }, { new: true })
