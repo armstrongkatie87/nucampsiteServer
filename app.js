@@ -1,10 +1,9 @@
-//removed sessions based code
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var logger = require('morgan');
 const passport = require('passport');
-const config = require('./config');//imported config file
+const config = require('./config');
 
 
 var indexRouter = require('./routes/index');
@@ -15,7 +14,7 @@ const partnerRouter = require('./routes/partnerRouter');
 
 const mongoose = require('mongoose');
 
-const url = config.mongoUrl;//replaced hardcoded url
+const url = config.mongoUrl;
 const connect = mongoose.connect(url, {
   useCreateIndex: true,
   useFindAndModify: false,
@@ -29,6 +28,17 @@ connect.then(() => console.log('Connected correctly to server'),
 
 var app = express();
 
+// Secure traffic only
+app.all('*', (req, res, next) => {//catches all req's come to server
+  if (req.secure) {
+    return next();
+  } else {//status code 301 = permanent redirect
+      console.log(`Redirecting to: https://${req.hostname}:${app.get('secPort')}${req.url}`);
+      res.redirect(301, `https://${req.hostname}:${app.get('secPort')}${req.url}`);
+  }
+});
+
+//view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 

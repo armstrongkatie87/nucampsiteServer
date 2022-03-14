@@ -8,12 +8,16 @@ var app = require('../app');
 var debug = require('debug')('nucampsiteserver:server');
 var http = require('http');
 
+const https = require('https');//req'd node core module - https
+const fs = require('fs');//req'd file system module
+
 /**
  * Get port from environment and store in Express.
+ * Note: in develop in std prod the http server will typically run on port 80 & the https server will run on port 443
  */
-
-var port = normalizePort(process.env.PORT || '3000');
+var port = normalizePort(process.env.PORT || '3000');//port for http server
 app.set('port', port);
+app.set('secPort', port+443);//added port for https
 
 /**
  * Create HTTP server.
@@ -28,6 +32,27 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
+/**
+ * Create HTTPS server.
+ */ 
+ 
+ const options = {
+  key: fs.readFileSync(__dirname+'/server.key'),//private key
+  cert: fs.readFileSync(__dirname+'/server.cert')//certificate contains certified public key
+};
+
+const secureServer = https.createServer(options, app);//pass in private key and cert through options obj to make secureServer
+
+/**
+* Listen on provided port, on all network interfaces.
+*/
+
+secureServer.listen(app.get('secPort'), () => {//tell server start listening on port 3443 & inclu callback to console log msg
+ console.log('Server listening on port', app.get('secPort'));
+});
+secureServer.on('error', onError);
+secureServer.on('listening', onListening);
 
 /**
  * Normalize a port into a number, string, or false.
