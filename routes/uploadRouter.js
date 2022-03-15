@@ -1,27 +1,28 @@
-//Enable file uploading 
+//Configure the routers for CORS 
 const express = require('express');
 const authenticate = require('../authenticate');
-const multer = require('multer');//installed and req'd multer middleware library to set up an Express server to accept file uploads
+const multer = require('multer');
+const cors = require('./cors');//imported cors mod just created
 
 //customized storage
-const storage = multer.diskStorage({//diskStorage provided by multer give obj config settings
-    destination: (req, file, cb) => {//set destination prop takes a f(x) needs req obj, file & callback f(x)
-        cb(null, 'public/images');//used callbak passed null-no err, then path want save file to
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/images');
     },
-    filename: (req, file, cb) => {//set up filename similar to destination
-        cb(null, file.originalname)//this make sure name file on server same as name of file on client; if don't set by def multer give random string
+    filename: (req, file, cb) => {
+        cb(null, file.originalname)
     }
 });
 
 //created file filter
 const imageFileFilter = (req, file, cb) => {
-    if(!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {//used regex exp look for file ext
-        return cb(new Error('You can upload only image files!'), false);//rejects file upload
+    if(!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+        return cb(new Error('You can upload only image files!'), false);
     }
-    cb(null, true);//no err accept file
+    cb(null, true);
 };
 
-//call multer f(x), now multer module config to enable img file uploads
+//img file uploads
 const upload = multer({ storage: storage, fileFilter: imageFileFilter});
 
 //set up Router
@@ -29,20 +30,21 @@ const uploadRouter = express.Router();
 
 //Config upload router to handle var http req's and only allow post req's
 uploadRouter.route('/')
-.get(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     res.statusCode = 403;
     res.end('GET operation not supported on /imageUpload');
-})//added multer using upload const-expect single upload of file f/imageFile
-.post(authenticate.verifyUser, authenticate.verifyAdmin, upload.single('imageFile'), (req, res) => {
+})
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, upload.single('imageFile'), (req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.json(req.file);//sends file back to client confirms file rec'd correctly
+    res.json(req.file);
 })
-.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /imageUpload');
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end('DELETE operation not supported on /imageUpload');
 });
