@@ -1,9 +1,8 @@
-//Configure the routers for CORS In users.js, all methods should use cors.corsWithOptions
 const express = require('express');
 const User = require('../models/user');
 const passport = require('passport');
 const authenticate = require('../authenticate');
-const cors = require('./cors');//imported cors mod just created
+const cors = require('./cors');
 
 const router = express.Router();
 
@@ -15,6 +14,15 @@ router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.veri
         res.json(users);
       });
   })
+//updated Facebook authentication strategy
+  router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
+    if (req.user) {
+        const token = authenticate.getToken({_id: req.user._id});
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success: true, token: token, status: 'You are successfully logged in!'});
+    }
+});
 
 router.post('/signup', cors.corsWithOptions, (req, res) => {
     User.register(

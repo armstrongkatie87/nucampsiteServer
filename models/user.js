@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const passportLocalMongoose = require('passport-local-mongoose');
 const Schema = mongoose.Schema;
 
-//1: Modify the userSchema to incl 1st & last name
+//updated w/facebookId
 const userSchema = new Schema({
     firstname: {
         type: String,
@@ -12,6 +12,7 @@ const userSchema = new Schema({
         type: String,
         default: ''
     },
+    facebookId: String,
     admin: {
         type: Boolean,
         default: false

@@ -4,6 +4,7 @@ const User = require('./models/user');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken'); 
+const FacebookTokenStrategy = require('passport-facebook-token');//imported Facebook authentication strategy
 
 const config = require('./config.js');
 
@@ -39,8 +40,6 @@ exports.jwtPassport = passport.use(
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
 
-//Task 1: Set up the verifyAdmin() middleware Check for admin property: This function will check if a user has admin privileges. In order to perform this check, recall that all user documents include a field called admin set to Boolean true or false, false by default. When a user is authenticated in the verifyUser() function, Passport will load a user property to the req object. This will be available to you as long as the verifyAdmin() middleware follows after the verifyUser() middleware when they are executed in the Express routing methods. Then from the req object, you will be able to obtain the value of the admin flag by using the following expression: req.user.admin You can use this to find out if the user is an administrator. Allow admins to pass to the next middleware: You will have the verifyAdmin() function return next(); if the user is an admin. If not, create a new Error object with the message "You are not authorized to perform this operation!", set its status property to 403, and return next(err).
-
 exports.verifyAdmin = function(req, res, next){
     if (req.user.admin === true){
         return next();
@@ -50,3 +49,35 @@ exports.verifyAdmin = function(req, res, next){
         return next(err);
     }
 }; 
+
+//Set up Facebook authentication strategy
+exports.facebookPassport = passport.use(
+    new FacebookTokenStrategy(
+        {
+            clientID: config.facebook.clientId,
+            clientSecret: config.facebook.clientSecret
+        }, 
+        (accessToken, refreshToken, profile, done) => {
+            User.findOne({facebookId: profile.id}, (err, user) => {
+                if (err) {
+                    return done(err, false);
+                }
+                if (!err && user) {
+                    return done(null, user);
+                } else {
+                    user = new User({ username: profile.displayName });
+                    user.facebookId = profile.id;
+                    user.firstname = profile.name.givenName;
+                    user.lastname = profile.name.familyName;
+                    user.save((err, user) => {
+                        if (err) {
+                            return done(err, false);
+                        } else {
+                            return done(null, user);
+                        }
+                    });
+                }
+            });
+        }
+    )
+);
